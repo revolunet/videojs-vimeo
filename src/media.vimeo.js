@@ -73,8 +73,12 @@
 
   videojs.Vimeo.prototype.dispose = function(){
     if (this.vimeo) {
-      this.vimeo.removeEvent('ready');
-      this.vimeo.api('unload');
+      if (this.vimeo.removeEvent) {
+        this.vimeo.removeEvent('ready');
+      }
+      if (this.vimeo.api) {
+        this.vimeo.api('unload');
+      }
       delete this.vimeo;
    }
    if (this.el_) {
