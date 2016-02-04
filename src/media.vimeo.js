@@ -11,6 +11,7 @@
     BUFFERING: 3
   };
 
+
   /**
    * Vimeo Media Controller - Wrapper for Vimeo Media API
    * @param {videojs.Player|Object} player
@@ -31,9 +32,6 @@
 
       this.player_ = player;
       this.player_el_ = document.getElementById(this.player_.id());
-
-      // Disable lockShowing because we always use Vimeo controls
-      this.player_.controls(false);
 
       this.id_ = this.player_.id() + '_vimeo_api';
 
