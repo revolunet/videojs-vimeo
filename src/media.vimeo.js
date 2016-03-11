@@ -45,9 +45,11 @@
       });
 
       // Fix createEl not creating these attributes.
-      this.el_.setAttribute('webkitAllowFullScreen', '')
-      this.el_.setAttribute('mozallowfullscreen', '')
-      this.el_.setAttribute('allowFullScreen', '')
+      if (this.player_.options()['allowfullscreen']) {
+        this.el_.setAttribute('webkitAllowFullScreen', '')
+        this.el_.setAttribute('mozallowfullscreen', '')
+        this.el_.setAttribute('allowFullScreen', '')
+      }
 
       this.player_el_.insertBefore(this.el_, this.player_el_.firstChild);
 
@@ -105,7 +107,7 @@
       show_title: 0,
       show_byline: 0,
       show_portait: 0,
-      fullscreen: 1,
+      fullscreen: (this.player_.options()['allowfullscreen'])?1:0,
       player_id: this.id_,
       autoplay: (this.player_.options()['autoplay'])?1:0,
       loop: (this.player_.options()['loop'])?1:0,
