@@ -22,6 +22,29 @@ var Component = _video2.default.getComponent('Component');
 var Tech = _video2.default.getComponent('Tech');
 var cssInjected = false;
 
+// Since the iframe can't be touched using Vimeo's way of embedding,
+// let's add a new styling rule to have the same style as `vjs-tech`
+function injectCss() {
+  if (cssInjected) {
+    return;
+  }
+  cssInjected = true;
+  var css = '\n    .vjs-vimeo iframe {\n      position: absolute;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n    }\n  ';
+  var head = document.head || document.getElementsByTagName('head')[0];
+
+  var style = document.createElement('style');
+
+  style.type = 'text/css';
+
+  if (style.styleSheet) {
+    style.styleSheet.cssText = css;
+  } else {
+    style.appendChild(document.createTextNode(css));
+  }
+
+  head.appendChild(style);
+}
+
 /**
  * Vimeo - Wrapper for Video Player API
  *
@@ -73,13 +96,17 @@ var Vimeo = function (_Tech) {
     if (this.options_.loop) {
       vimeoOptions.loop = this.options_.loop;
     }
+    if (this.options_.color) {
+      // vimeo is the only API on earth to reject hex color with leading #
+      vimeoOptions.color = this.options_.color.replace(/^#/, '');
+    }
 
     this._player = new _player2.default(this.el(), vimeoOptions);
     this.initVimeoState();
 
     ['play', 'pause', 'ended', 'timeupdate', 'progress', 'seeked'].forEach(function (e) {
       _this2._player.on(e, function (progress) {
-        if (_this2._vimeoState.progress.duration != progress.duration) {
+        if (_this2._vimeoState.progress.duration !== progress.duration) {
           _this2.trigger('durationchange');
         }
         _this2._vimeoState.progress = progress;
@@ -177,7 +204,7 @@ var Vimeo = function (_Tech) {
     return this._vimeoState.volume;
   };
 
-  Vimeo.prototype.setVolume = function setVolume(v) {
+  Vimeo.prototype.setVolume = function setVolume(volume) {
     return this._player.setVolume(volume);
   };
 
@@ -187,6 +214,7 @@ var Vimeo = function (_Tech) {
 
   Vimeo.prototype.buffered = function buffered() {
     var progress = this._vimeoState.progress;
+
     return _video2.default.createTimeRange(0, progress.percent * progress.duration);
   };
 
@@ -268,28 +296,6 @@ Vimeo.nativeSourceHandler.handleSource = function (source, tech) {
 Vimeo.nativeSourceHandler.dispose = function () {};
 
 Vimeo.registerSourceHandler(Vimeo.nativeSourceHandler);
-
-// Since the iframe can't be touched using Vimeo's way of embedding,
-// let's add a new styling rule to have the same style as `vjs-tech`
-function injectCss() {
-  if (cssInjected) {
-    return;
-  }
-  cssInjected = true;
-  var css = '\n      .vjs-vimeo iframe {\n        position: absolute;\n        top: 0;\n        left: 0;\n        width: 100%;\n        height: 100%;\n      }\n    ';
-  var head = document.head || document.getElementsByTagName('head')[0];
-
-  var style = document.createElement('style');
-  style.type = 'text/css';
-
-  if (style.styleSheet) {
-    style.styleSheet.cssText = css;
-  } else {
-    style.appendChild(document.createTextNode(css));
-  }
-
-  head.appendChild(style);
-}
 
 Component.registerComponent('Vimeo', Vimeo);
 Tech.registerTech('Vimeo', Vimeo);
