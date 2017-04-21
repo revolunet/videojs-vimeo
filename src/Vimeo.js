@@ -188,9 +188,11 @@ class Vimeo extends Tech {
     this.source = source;
     this.url = Vimeo.parseUrl(source.src);
 
-    if (this.url.videoId) {
-      // Check if their is a high res
-      this.checkHighResPoster();
+    if (!this.options_.poster) {
+      if (this.url.videoId) {
+        // Check if their is a high res
+        this.checkHighResPoster();
+      }
     }
   }
 
