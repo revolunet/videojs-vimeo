@@ -301,10 +301,11 @@ class Vimeo extends Tech {
     let url = Vimeo.getPosterUri(this.url.videoId);
 
     let https = require('https');
+
     https.get(url, function(res) {
       let body = '';
 
-      res.on('data', function(chunk) {npm
+      res.on('data', function(chunk) {
         body += chunk;
       });
 
