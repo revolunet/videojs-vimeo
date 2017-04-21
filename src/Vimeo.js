@@ -298,11 +298,17 @@ class Vimeo extends Tech {
 
   checkHighResPoster() {
     let self = this; // eslint-disable-line
-    let url = Vimeo.getPosterUri(this.url.videoId);
-
     let https = require('https');
 
-    https.get(url, function(res) {
+    const options = {
+      hostname: 'vimeo.com',
+      port: 443,
+      path: '/api/v2/video/' + this.url.videoId + '.json',
+      method: 'GET',
+      withcredentials: false
+    };
+
+    https.get(options, function(res) {
       let body = '';
 
       res.on('data', function(chunk) {
@@ -347,10 +353,6 @@ Vimeo.canPlayType = function(e) {
 
 Vimeo.canPlaySource = function(e) {
   return Vimeo.canPlayType(e.type);
-};
-
-Vimeo.getPosterUri = function(videoId, resolution) {
-  return 'http://vimeo.com/api/v2/video/' + videoId + '.json';
 };
 
 Vimeo.parseUrl = function(url) {
