@@ -219,10 +219,12 @@ var Vimeo = function (_Tech) {
     this.source = source;
     this.url = Vimeo.parseUrl(source.src);
 
+    //if (!this.options_.poster) {
     if (this.url.videoId) {
       // Check if their is a high res
       this.checkHighResPoster();
     }
+    //}
   };
 
   Vimeo.prototype.currentSrc = function currentSrc() {
@@ -332,9 +334,17 @@ var Vimeo = function (_Tech) {
     var https = require('https');
 
     var options = {
-      url: 'https://vimeo.com/api/v2/video/' + this.url.videoId + '.json',
+      hostname: 'vimeo.com',
+      port: 443,
+      path: '/api/v2/video/' + this.url.videoId + '.json',
+      method: 'GET',
       withCredentials: false
     };
+
+    /*let options = {
+      url: 'https://vimeo.com/api/v2/video/' + this.url.videoId + '.json',
+      withCredentials: false
+    }*/
 
     https.get(options, function (res) {
       var body = '';

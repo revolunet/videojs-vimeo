@@ -188,12 +188,12 @@ class Vimeo extends Tech {
     this.source = source;
     this.url = Vimeo.parseUrl(source.src);
 
-    if (!this.options_.poster) {
+    //if (!this.options_.poster) {
       if (this.url.videoId) {
         // Check if their is a high res
         this.checkHighResPoster();
       }
-    }
+    //}
   }
 
   currentSrc() {
@@ -302,10 +302,18 @@ class Vimeo extends Tech {
     let self = this; // eslint-disable-line
     let https = require('https');
 
-    let options = {
-      url: 'https://vimeo.com/api/v2/video/' + this.url.videoId + '.json',
+    const options = {
+      hostname: 'vimeo.com',
+      port: 443,
+      path: '/api/v2/video/' + this.url.videoId + '.json',
+      method: 'GET',
       withCredentials: false
     };
+
+    /*let options = {
+      url: 'https://vimeo.com/api/v2/video/' + this.url.videoId + '.json',
+      withCredentials: false
+    }*/
 
     https.get(options, function(res) {
       let body = '';
