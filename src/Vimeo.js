@@ -188,12 +188,12 @@ class Vimeo extends Tech {
     this.source = source;
     this.url = Vimeo.parseUrl(source.src);
 
-    //if (!this.options_.poster) {
-      if (this.url.videoId) {
-        // Check if their is a high res
-        this.checkHighResPoster();
-      }
-    //}
+    // if (!this.options_.poster) {
+    if (this.url.videoId) {
+      // Check if their is a high res
+      this.checkHighResPoster();
+    }
+    // }
   }
 
   currentSrc() {
@@ -310,10 +310,12 @@ class Vimeo extends Tech {
       withCredentials: false
     };
 
-    /*let options = {
+    /*
+    let options = {
       url: 'https://vimeo.com/api/v2/video/' + this.url.videoId + '.json',
       withCredentials: false
-    }*/
+    }
+    */
 
     https.get(options, function(res) {
       let body = '';
