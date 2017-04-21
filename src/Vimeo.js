@@ -1,5 +1,6 @@
 import videojs from 'video.js';
 import VimeoPlayer from '@vimeo/player';
+import https from 'https';
 
 const Component = videojs.getComponent('Component');
 const Tech = videojs.getComponent('Tech');
@@ -188,15 +189,9 @@ class Vimeo extends Tech {
     this.source = source;
     this.url = Vimeo.parseUrl(source.src);
 
-    if (!this.options_.poster) {
-      if (this.url.videoId) {
-        // Set the low resolution first
-        this.poster_ = 'https://i.vimeocdn.com/video/' + this.url.videoId + '_640.jpg';
-        this.trigger('posterchange');
-
-        // Check if their is a high res
-        this.checkHighResPoster();
-      }
+    if (this.url.videoId) {
+      // Check if their is a high res
+      this.checkHighResPoster();
     }
   }
 
@@ -304,39 +299,26 @@ class Vimeo extends Tech {
 
   checkHighResPoster() {
     let self = this; // eslint-disable-line
-    let resolutions = [1280, 960];
-    let current = 0;
-    let uri = Vimeo.getPosterUri(this.url.videoId, resolutions[current]);
+    let url = Vimeo.getPosterUri(this.url.videoId);
 
-    try {
-      let image = new Image();
+    https.get(url, function(res) {
+      let body = '';
 
-      image.onload = function() {
-        // Onload may still be called if YouTube returns the 120x90 error thumbnail
-        if ('naturalHeight' in image) {
-          if (image.naturalHeight <= 90 || image.naturalWidth <= 120) {
-            return;
-          }
-        } else if (image.height <= 90 || image.width <= 120) {
-          return;
-        }
+      res.on('data', function(chunk) {
+        body += chunk;
+      });
 
-        self.poster_ = uri;
+      res.on('end', function() {
+        let data = JSON.parse(body);
+
+        self.poster_ = data[0].thumbnail_large;
 
         self.trigger('posterchange');
-      };
-      image.onerror = function() {
-        current++;
 
-        if (current < resolutions.length) {
-          uri = Vimeo.getPosterUri(this.url.videoId, resolutions[current]);
-          image.src = uri;
-        }
-      };
-      image.src = uri;
-    } catch (error) {
+      });
+    }).on('error', function(error) {
       throw new Error(error);
-    }
+    });
   }
 
   setMuted(mute) {
@@ -367,7 +349,7 @@ Vimeo.canPlaySource = function(e) {
 };
 
 Vimeo.getPosterUri = function(videoId, resolution) {
-  return 'https://i.vimeocdn.com/video/' + videoId + '_' + resolution + '.jpg';
+  return 'http://vimeo.com/api/v2/video/' + videoId + '.json';
 };
 
 Vimeo.parseUrl = function(url) {
