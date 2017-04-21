@@ -332,11 +332,8 @@ var Vimeo = function (_Tech) {
     var https = require('https');
 
     var options = {
-      hostname: 'vimeo.com',
-      port: 443,
-      path: '/api/v2/video/' + this.url.videoId + '.json',
-      method: 'GET',
-      withcredentials: false
+      url: 'https://vimeo.com/api/v2/video/' + this.url.videoId + '.json',
+      withCredentials: false
     };
 
     https.get(options, function (res) {

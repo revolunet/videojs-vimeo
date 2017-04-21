@@ -300,11 +300,8 @@ class Vimeo extends Tech {
     let self = this; // eslint-disable-line
     let https = require('https');
 
-    const options = {
-      hostname: 'vimeo.com',
-      port: 443,
-      path: '/api/v2/video/' + this.url.videoId + '.json',
-      method: 'GET',
+    let options = {
+      url: 'https://vimeo.com/api/v2/video/' + this.url.videoId + '.json',
       withCredentials: false
     };
 
