@@ -4,6 +4,7 @@ import VimeoPlayer from '@vimeo/player';
 const Component = videojs.getComponent('Component');
 const Tech = videojs.getComponent('Tech');
 let cssInjected = false;
+let _isOnMobile = videojs.browser.IS_IOS || videojs.browser.IS_ANDROID;
 
 // Since the iframe can't be touched using Vimeo's way of embedding,
 // let's add a new styling rule to have the same style as `vjs-tech`
@@ -50,17 +51,20 @@ class Vimeo extends Tech {
 
     injectCss();
     this.setPoster(options.poster);
+    this.setSrc(this.options_.source);
     this.initVimeoPlayer();
   }
 
   initVimeoPlayer() {
     const vimeoOptions = {
-      url: this.options_.source.src,
       byline: false,
       portrait: false,
       title: false
     };
 
+    if (this.source) {
+      vimeoOptions.url = this.source.src;
+    }
     if (this.options_.autoplay) {
       vimeoOptions.autoplay = true;
     }
@@ -86,6 +90,10 @@ class Vimeo extends Tech {
 
     this._player = new VimeoPlayer(this.el(), vimeoOptions);
     this.initVimeoState();
+
+    if (this.options_.muted) {
+      this.setMuted(true);
+    }
 
     ['play', 'pause', 'ended', 'timeupdate', 'progress', 'seeked'].forEach(e => {
       this._player.on(e, (progress) => {
@@ -149,17 +157,48 @@ class Vimeo extends Tech {
     return true;
   }
 
-  src() {
-    // @note: Not sure why this is needed but videojs requires it
-    return this.options_.source;
+  src(src) {
+    if (src) {
+      this.setSrc({src: src}); // eslint-disable-line
+    }
+
+    return this.source;
+  }
+
+  poster() {
+    // You can't start programmatically a video with a mobile
+    // through the iframe so we hide the poster and the play button (with CSS)
+    if (_isOnMobile) {
+      return null;
+    }
+
+    return this.poster_;
+  }
+
+  setPoster(poster) {
+    this.poster_ = poster;
+  }
+
+  setSrc(source) {
+    if (!source || !source.src) {
+      return;
+    }
+
+    delete this.errorNumber;
+    this.source = source;
+    this.url = Vimeo.parseUrl(source.src);
+
+    // if (!this.options_.poster) {
+    if (this.url.videoId) {
+      // Check if their is a high res
+      this.checkHighResPoster();
+    }
+    // }
   }
 
   currentSrc() {
     return this.options_.source.src;
   }
-
-  // @note setSrc is used in other usecases (YouTube, Html) it doesn't seem required here
-  // setSrc() {}
 
   currentTime() {
     return this._vimeoState.progress.seconds;
@@ -192,11 +231,29 @@ class Vimeo extends Tech {
   }
 
   pause() {
-    this._player.pause();
+    if (this._player) {
+      this._player.pause();
+    }
   }
 
   play() {
-    this._player.play();
+    if (!this.url || !this.url.videoId) {
+      return;
+    }
+
+    this.wasPausedBeforeSeek = false;
+
+    if (this.isReady_) {
+      if (this.activeVideoId === this.url.videoId) {
+        this._player.play();
+      } else {
+        // this.loadVideoById_(this.url.videoId);
+        this.activeVideoId = this.url.videoId;
+      }
+    } else {
+      this.trigger('waiting');
+      this.playOnReady = true;
+    }
   }
 
   muted() {
@@ -207,61 +264,122 @@ class Vimeo extends Tech {
     return this._vimeoState.ended;
   }
 
-  // Vimeo does has a mute API and native controls aren't being used,
-  // so setMuted doesn't really make sense and shouldn't be called.
-  // setMuted(mute) {}
+  load() {
+    let self = this; // eslint-disable-line
+
+    if (this.url && this.url.videoId) {
+      this._player.unload().then(function() {
+        self._player.loadVideo(self.url.videoId).then(function() {
+          if (self.options_.muted) {
+            self.setMuted(true);
+          }
+          if (self.options_.autoplay && !_isOnMobile) {
+            if (self.isReady_) {
+              self.play();
+            } else {
+              self.playOnReady = true;
+            }
+          } else if (self.activeVideoId !== self.url.videoId) {
+            if (self.isReady_) {
+              // this.cueVideoById_(this.url.videoId);
+              self.activeVideoId = self.url.videoId;
+            } else {
+              self.cueOnReady = true;
+            }
+          }
+        }).catch(function(error) {
+          throw new Error(error);
+        });
+      }).catch(function(error) {
+        throw new Error(error);
+      });
+    }
+  }
+
+  reset() {}
+
+  checkHighResPoster() {
+    let self = this; // eslint-disable-line
+    let https = require('https');
+
+    const options = {
+      hostname: 'vimeo.com',
+      port: 443,
+      path: '/api/v2/video/' + this.url.videoId + '.json',
+      method: 'GET',
+      withCredentials: false
+    };
+
+    /*
+    let options = {
+      url: 'https://vimeo.com/api/v2/video/' + this.url.videoId + '.json',
+      withCredentials: false
+    }
+    */
+
+    https.get(options, function(res) {
+      let body = '';
+
+      res.on('data', function(chunk) {
+        body += chunk;
+      });
+
+      res.on('end', function() {
+        let data = JSON.parse(body);
+
+        self.poster_ = data[0].thumbnail_large;
+
+        self.trigger('posterchange');
+
+      });
+    }).on('error', function(error) {
+      throw new Error(error);
+    });
+  }
+
+  setMuted(mute) {
+    if (mute) {
+      Vimeo.unmuteVolume = this._player.getVolume();
+      this._player.setVolume(0);
+    } else {
+      this._player.setVolume(Vimeo.unmuteVolume);
+    }
+
+    this._vimeoState.volume = this._player.getVolume();
+  }
 }
 
 Vimeo.prototype.featuresTimeupdateEvents = true;
+Vimeo.prototype.unmuteVolume = null;
 
 Vimeo.isSupported = function() {
   return true;
 };
 
-// Add Source Handler pattern functions to this tech
-Tech.withSourceHandlers(Vimeo);
+Vimeo.canPlayType = function(e) {
+  return (e === 'video/vimeo');
+};
 
-Vimeo.nativeSourceHandler = {};
+Vimeo.canPlaySource = function(e) {
+  return Vimeo.canPlayType(e.type);
+};
 
-/**
- * Check if Vimeo can play the given videotype
- * @param  {String} type    The mimetype to check
- * @return {String}         'maybe', or '' (empty string)
- */
-Vimeo.nativeSourceHandler.canPlayType = function(source) {
-  if (source === 'video/vimeo') {
-    return 'maybe';
+Vimeo.parseUrl = function(url) {
+  let result = {
+    videoId: null
+  };
+
+  let regex =
+    /^.*(vimeo\.com\/)((channels\/[A-z]+\/)|(groups\/[A-z]+\/videos\/))?([0-9]+)/;
+
+  let match = regex.exec(url);
+
+  if (match && match[5]) {
+    result.videoId = match[5];
   }
 
-  return '';
+  return result;
 };
-
-/*
- * Check Vimeo can handle the source natively
- *
- * @param  {Object} source  The source object
- * @return {String}         'maybe', or '' (empty string)
- * @note: Copied over from YouTube — not sure this is relevant
- */
-Vimeo.nativeSourceHandler.canHandleSource = function(source) {
-  if (source.type) {
-    return Vimeo.nativeSourceHandler.canPlayType(source.type);
-  } else if (source.src) {
-    return Vimeo.nativeSourceHandler.canPlayType(source.src);
-  }
-
-  return '';
-};
-
-// @note: Copied over from YouTube — not sure this is relevant
-Vimeo.nativeSourceHandler.handleSource = function(source, tech) {
-  tech.src(source.src);
-};
-
-// @note: Copied over from YouTube — not sure this is relevant
-Vimeo.nativeSourceHandler.dispose = function() { };
-
-Vimeo.registerSourceHandler(Vimeo.nativeSourceHandler);
 
 Component.registerComponent('Vimeo', Vimeo);
 Tech.registerTech('Vimeo', Vimeo);
