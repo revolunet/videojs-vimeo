@@ -10,10 +10,6 @@ var _player = require('@vimeo/player');
 
 var _player2 = _interopRequireDefault(_player);
 
-var _https = require('https');
-
-var _https2 = _interopRequireDefault(_https);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -335,7 +331,8 @@ var Vimeo = function (_Tech) {
     var self = this; // eslint-disable-line
     var url = Vimeo.getPosterUri(this.url.videoId);
 
-    _https2.default.get(url, function (res) {
+    var https = require('https');
+    https.get(url, function (res) {
       var body = '';
 
       res.on('data', function (chunk) {

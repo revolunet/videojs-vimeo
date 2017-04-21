@@ -1,6 +1,5 @@
 import videojs from 'video.js';
 import VimeoPlayer from '@vimeo/player';
-import https from 'https';
 
 const Component = videojs.getComponent('Component');
 const Tech = videojs.getComponent('Tech');
@@ -301,10 +300,11 @@ class Vimeo extends Tech {
     let self = this; // eslint-disable-line
     let url = Vimeo.getPosterUri(this.url.videoId);
 
+    let https = require('https');
     https.get(url, function(res) {
       let body = '';
 
-      res.on('data', function(chunk) {
+      res.on('data', function(chunk) {npm
         body += chunk;
       });
 

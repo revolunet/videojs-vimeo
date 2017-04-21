@@ -66,8 +66,7 @@
   ],
   "dependencies": {
     "@vimeo/player": "^2.0.1",
-    "browserify-versionify": "^1.0.6",
-    "https": "^1.0.0"
+    "browserify-versionify": "^1.0.6"
   },
   "peerDependencies": {
     "video.js": "^5.16"
