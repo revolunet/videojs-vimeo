@@ -305,7 +305,7 @@ class Vimeo extends Tech {
       port: 443,
       path: '/api/v2/video/' + this.url.videoId + '.json',
       method: 'GET',
-      withcredentials: false
+      withCredentials: false
     };
 
     https.get(options, function(res) {
